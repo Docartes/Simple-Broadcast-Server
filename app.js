@@ -1,30 +1,19 @@
 #!/usr/bin/env node
 
 import { program } from 'commander'
-// import pkg from 'ws'
-// const { WebSocketServer } = pkg
-// const WebSocket = pkg
-import { Server } from 'socket.io'
-import { io } from 'socket.io-client'
+import { WebSocket } from './ws.service.js'
+
+
+const ws = new WebSocket
 
 program.command('start')
 	.action(() => {
-		const ws = new Server({})
-
-		ws.on('connection', (socket) => {
-			console.log('user connected socket id: %s', socket.id)
-		})
-
-		ws.listen(3000)
+		ws.start()
 	})
 
 program.command('connect')
 	.action(() => {
-		const socket = io(`ws://localhost:3000`)
-
-		socket.on('connect', () => {
-			console.log(`socket ID: %s`, socket.id)
-		})
+		ws.connect()
 	})
 
 program.parse()
