@@ -4,30 +4,30 @@ import inquirer from 'inquirer'
 
 class WebSocket {
 	start() {
-		const list = []
 		const io = new Server({})
 
 		io.on('connection', (socket) => {
 			console.log(`a user connected with socket id: %s`, socket.id);
-			socket.on(`message`, (arg, cb) => {
-				console.log(arg)
-				cb(arg)
+
+			io.emit('users', Array.from(io.sockets.sockets.keys()))
+
+			socket.on('chat', (message) => {
+				console.log('message: %s', message)
+
+				io.emit('chat', {
+					from: socket.id,
+					message
+				})
 			})
-			list.push(socket.id)
+
+			socket.on('disconnect', () => {
+				console.log(`a user disconnected from server`)
+
+				io.emit('users', Array.from(io.sockets.sockets.keys()))
+			})
 		})
 
 		io.listen(3000)
-	}
-
-	options() {
-		inquirer
-			.prompt([
-				'disconnected',
-				'send message'
-			])
-			.then((answers) => {
-				
-			})
 	}
 
 	connect() {
@@ -37,24 +37,30 @@ class WebSocket {
 			console.log(`socket id: %s`, socket.id)
 		})
 
-		socket.on('disconnect', () => {
-			if ( socket.id == undefined ) {
-				console.log(`You are disconnected from the websocket`)
-			}
+		socket.on('users', (users) => {
+			console.log(`list conected users: ${users}`)
 		})
 
-		socket.emit(`message`, `hello world`, (response) => {
-			console.log(response);
+		socket.on('chat', (data) => {
+			console.log(`[${data.from}]: ${data.message}`)
 		})
-	}
 
-	disconnect() {
-		const socket = io(`ws://localhost:3000`)
-		socket.on('disconnect', () => {
-			if ( socket.id == undefined ) {
-				console.log(`You are disconnected from the websocket`)
+		const ask = async() => {
+			const { message } = await inquirer.prompt([{
+				name: 'message',
+				message: 'type a message or quit (q to quit) ?'
+			}]);
+
+			if ( message == 'q') {
+				socket.disconnect();
+				return;
 			}
-		})
+
+			socket.emit('chat', message)
+			ask();
+		}
+
+		ask()
 	}
 }
 
